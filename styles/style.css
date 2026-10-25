@@ -1,0 +1,30 @@
+/*
+ * Tofu changed this file on 2026-10-25: it was styles/style.scss, which needs the `sass` compiler that upstream's
+ * package.json leaves out, so a build stopped at the import. The two nested rules are written out as plain CSS.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#__next,
+.main {
+  max-height: 100vh;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.channel-list li a:before {
+  content: '# ';
+  opacity: 0.5;
+}
+.channel-list li a:hover {
+  opacity: 0.9;
+}
+.Messages {
+  overflow: auto;
+  display: flex;
+  flex-direction: column-reverse;
+}

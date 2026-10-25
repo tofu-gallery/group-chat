@@ -4,19 +4,19 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
-    "export": "next export",
-    "build": "next build",
+    "build": "node tofu/migrate.mjs && next build",
     "start": "next start"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2",
     "jwt-decode": "^4.0.0",
-    "next": "latest",
+    "next": "16.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
+    "pg": "^8.23.1",
     "postcss": "^8.4.24",
     "tailwindcss": "^3.3.2"
   }
