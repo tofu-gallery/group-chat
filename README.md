@@ -1,4 +1,4 @@
-> This repository holds the folder `examples/slack-clone/nextjs-slack-clone` of [supabase/supabase](https://github.com/supabase/supabase) at commit [`7e866ef83e89e35cdda45a6c98abd069d5fa1b2f`](https://github.com/supabase/supabase/tree/7e866ef83e89e35cdda45a6c98abd069d5fa1b2f/examples/slack-clone/nextjs-slack-clone), unchanged but for this line, with the repository's `LICENSE` (Apache-2.0) copied beside it.
+> Tofu's copy of the folder `examples/slack-clone/nextjs-slack-clone` of [supabase/supabase](https://github.com/supabase/supabase) at commit [`7e866ef83e89e35cdda45a6c98abd069d5fa1b2f`](https://github.com/supabase/supabase/tree/7e866ef83e89e35cdda45a6c98abd069d5fa1b2f/examples/slack-clone/nextjs-slack-clone), with the repository's `LICENSE` (Apache-2.0) beside it. The branch `main` holds the folder unchanged; this branch, `tofu`, changes it to run on Tofu, and [TOFU.md](./TOFU.md) says what changed and why. Tofu changed this README on 2026-10-25: this line and the two sections marked below.
 
 # Realtime chat example using Supabase
 
@@ -89,17 +89,7 @@ Supabase integrates seamlessly with Vercel's preview branches, giving each branc
 
 ### Role-based access control (RBAC)
 
-Use [plus addressing](https://en.wikipedia.org/wiki/Email_address#Subaddressing) to sign up users with the `admin` & `moderator` roles. Email addresses including `+supaadmin@` will be assigned the `admin` role, and email addresses including `+supamod@` will be assigned the `moderator` role. For example:
-
-```
-// admin user
-email+supaadmin@example.com
-
-// moderator user
-email+supamod@example.com
-```
-
-Users with the `moderator` role can delete all messages. Users with the `admin` role can delete all messages and channels (note: it's not recommended to delete the `public` channel).
+(Tofu changed this section.) Each person's role is a row in `public.app_members`, by email address: `admin`, `member` or `viewer`. The first account made in the app becomes its `admin`, and every account after it a `member`. Admins can delete all messages and channels (the app offers no way to delete the `public` channel); members post, make channels and delete their own; viewers can read but not post. Upstream gave the `admin` and `moderator` roles to any address containing `+supaadmin@` or `+supamod@`, which let anyone promote themselves.
 
 ### Postgres Row level security
 
@@ -108,7 +98,7 @@ When you start a Postgres database on Supabase, we populate it with an `auth` sc
 When a user logs in, they are issued a JWT with the role `authenticated` and their UUID.
 We can use these details to provide fine-grained control over what each user can and cannot do.
 
-- For the full schema refer to [full-schema.sql](./full-schema.sql).
+- For the full schema refer to [supabase/migrations](./supabase/migrations) (Tofu changed this line: `full-schema.sql` is gone, as TOFU.md says).
 - For documentation on Role-based Access Control, refer to the [docs](https://supabase.com/docs/guides/auth/custom-claims-and-role-based-access-control-rbac).
 
 ## Authors
