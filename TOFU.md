@@ -37,11 +37,21 @@ the top of `README.md` naming the source. This branch, `tofu`, holds Tofu's chan
 
 ## Accounts, roles and sign-up
 
-- **The first account made in the app becomes its admin**, and every account after it a member. Make your own account
-  first. Admins delete any message and any channel (the app offers no way to delete `#public`, which everyone opens
-  on); members post, make channels and delete their own; a **viewer** can read but not post, and is told so. Roles are
-  rows of `public.app_members` (one per email address), the table Tofu's People card reads: it shows each person's
-  role, can lower a role on every plan and raise one on a paid plan.
+- **The first account made in the app becomes its admin** (exactly: an account made while no other account holds a
+  role), and every account after it a member. Make your own account first. Admins delete any message and any channel
+  (the app offers no way to delete `#public`, which everyone opens on); members post, make channels and delete their
+  own; a **viewer** can read but not post, and is told so. Roles are rows of `public.app_members` (one per email
+  address), the table Tofu's People card reads: it shows each person's role, can lower a role on every plan and raise
+  one on a paid plan.
+- **A role follows its person.** Anyone signed in can change their own email address through the auth service; once
+  the new address is confirmed, their row in `public.app_members` moves to it, and their name in the chat follows. A row
+  the new address already had goes first (an address belongs to one account at a time, so it was nobody's), and an
+  address taken away, which only an admin of the auth service can do, takes its row with it. A new account never takes
+  over a role left on its address: it gets the role a new account gets.
+- An account with no row is treated as a member. Only an account with no email address has none, because the table is
+  keyed by address (Tofu's People card shows no role for it and cannot give it one); the app's pages sign people in by
+  email or Google only, which always give an address, and while sign-up is closed the database makes no account but the
+  ones the owner adds, which always have one.
 - **Signing in on a new copy.** Continue with Google works at once. Email and password works as upstream's does —
   Supabase Auth asks each new address to confirm by email — but Tofu's first deploy does not write the app's sign-in
   settings (Tofu's `docs/app-auth.md`: the wiring skips with `no_address` before any version exists), so until the owner
@@ -56,8 +66,8 @@ the top of `README.md` naming the source. This branch, `tofu`, holds Tofu's chan
   anything else and deploying again opens sign-up again. Tofu's own **Only people you add** switch on the Sign-in page
   closes sign-up at the auth service instead and can be used beside it.
 - **Removing a person** from Tofu's People card removes their profile, their messages and their role, so an address that
-  comes back while sign-up is open starts as a member, never with a role it held before; the channels they made stay,
-  with no creator, so only an admin can delete them.
+  comes back while sign-up is open starts as any new account does, never with a role it held before; the channels they
+  made stay, with no creator, so only an admin can delete them.
 - Each person's name in the chat is their email address, and everyone signed in sees it (upstream's design).
 
 ## What we changed, and why
@@ -87,6 +97,15 @@ the top of `README.md` naming the source. This branch, `tofu`, holds Tofu's chan
   on (`public`, which the app sends everyone to as channel 1, and `random`) and the switch's row. Upstream kept these in
   `supabase/seed.sql`, which neither Tofu nor `supabase db push` runs, with a bot account and two messages made through
   `create_user()`. `supabase/seed.sql` and `full-schema.sql` (a copy of the old schema, with the same holes) are removed.
+- `supabase/migrations/20261025200000_tofu_roles_follow_address_changes.sql` (new): an `after update of email` trigger
+  on `auth.users` (`follow_address_change`) moves the person's row in `app_members` to their new address, deleting any
+  row the new address had first, deletes it when the address is taken away, and renames their profile; and
+  `handle_new_user` is replaced, so a new account writes over any row left on its address (`on conflict do nothing` let
+  it take that row's role) and is the admin only while no other account holds a role. Without it a role stayed on the
+  old address: a person lowered to viewer who changed address was a member again (no row reads as member), an admin who
+  changed address became a member, and the next account made with that old address became admin. It is a new file
+  rather than an edit of the init migration, so a database made from the earlier pin (`pin/2026-10-25`) gets it at its
+  next build; a person who had already changed address there keeps the role the old rules left them.
 - `tofu/migrate.mjs` (new) and the `build` script: the migrations and the sign-up switch, at the start of each build.
   It strips `sslmode` from `DATABASE_URL` and sets TLS itself, because node-postgres treats `sslmode=require` as full
   verification against the system's roots, which the managed database's pooler does not pass.

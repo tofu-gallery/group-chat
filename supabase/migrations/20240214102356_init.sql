@@ -5,7 +5,9 @@
 --   * Roles come from public.app_members, one row per email address (admin, member or viewer), which Tofu's dashboard
 --     shows and sets; the first account made in the app becomes its admin. Upstream read a custom claim that an auth
 --     hook added to each sign-in, and made anyone whose address contained +supaadmin@ or +supamod@ an admin or a
---     moderator, so anyone could promote themselves. A viewer can read but not post.
+--     moderator, so anyone could promote themselves. A viewer can read but not post. A later file,
+--     20261025200000_tofu_roles_follow_address_changes.sql, moves a person's row when their address changes and
+--     replaces handle_new_user below, so a new account never takes over a role left on its address.
 --   * public.create_user() is gone: a SECURITY DEFINER function in public, callable by anyone through the Data API,
 --     that wrote accounts straight into auth.users.
 --   * The realtime publication is added to, never dropped and made again.
