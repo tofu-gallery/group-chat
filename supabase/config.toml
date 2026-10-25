@@ -1,3 +1,5 @@
+# Tofu changed this file on 2026-10-25: the auth hook section near the end is gone (TOFU.md).
+#
 # A string used to distinguish different Supabase projects on the same host. Defaults to the
 # working directory name when running `supabase init`.
 project_id = "slack-clone"
@@ -78,11 +80,8 @@ port = 54324
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Enable auth hooks
-# https://supabase.com/docs/guides/auth/auth-hooks#local-development
-[auth.hook.custom_access_token]
-enabled = true
-uri = "pg-functions://postgres/public/custom_access_token_hook"
+# Tofu removed the custom access token hook here (2026-10-25): roles are read from public.app_members instead of a
+# claim the hook added, and the hook's function is gone from the migrations (TOFU.md says why).
 
 [analytics]
 enabled = false
