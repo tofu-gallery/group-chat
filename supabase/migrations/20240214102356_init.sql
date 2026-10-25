@@ -13,7 +13,9 @@
 --   * The realtime publication is added to, never dropped and made again.
 --   * Removing a person removes their profile, their messages and their role; channels they made stay, with no creator.
 --   * People cannot rename themselves through the Data API (the trigger below names each profile after its address).
---   * The Data API's roles get exactly the privileges the app's pages use, and every table has row-level security.
+--   * The Data API's roles get the privileges the app's pages use, and every table has row-level security. This file
+--     still kept upstream's update policy on public.messages and granted UPDATE on it, which no page uses; a later file,
+--     20261025200100_tofu_messages_cannot_be_edited.sql, takes both back.
 --   * A sign-up switch (public.app_settings) that the database itself enforces.
 --
 

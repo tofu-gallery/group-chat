@@ -40,7 +40,8 @@ the top of `README.md` naming the source. This branch, `tofu`, holds Tofu's chan
 - **The first account made in the app becomes its admin** (exactly: an account made while no other account holds a
   role), and every account after it a member. Make your own account first. Admins delete any message and any channel
   (the app offers no way to delete `#public`, which everyone opens on); members post, make channels and delete their
-  own; a **viewer** can read but not post, and is told so. Roles are rows of `public.app_members` (one per email
+  own; a **viewer** can read but not post, and is told so; nobody can edit a message once it is posted (the app has no
+  edit, and the Data API refuses one). Roles are rows of `public.app_members` (one per email
   address), the table Tofu's People card reads: it shows each person's role, can lower a role on every plan and raise
   one on a paid plan.
 - **A role follows its person.** Anyone signed in can change their own email address through the auth service; once
@@ -88,7 +89,9 @@ the top of `README.md` naming the source. This branch, `tofu`, holds Tofu's chan
     hand a returning address its old role, admin included.
   - The insert and update policies on `public.users` are gone and the Data API's roles may only read it: the trigger
     makes each profile, and upstream let anyone signed in rename themselves to anything, someone else's address included.
-  - `revoke`/`grant` give `anon` nothing and `authenticated` only what the pages use; every table has row-level security.
+  - `revoke`/`grant` give `anon` nothing and `authenticated` what the pages use, except that this file still granted
+    UPDATE on `messages` beside upstream's update policy, which the later file below takes back; every table has
+    row-level security.
   - `public.app_settings` and the `before insert` trigger on `auth.users` (`refuse_closed_sign_up`) are the sign-up
     switch. The `after insert` trigger takes an advisory lock, so two first sign-ups at once cannot both become admin.
 - `supabase/migrations/20240214114147_auth-hook.sql` (removed): the hook it made is no longer read, and nothing on Tofu
@@ -106,6 +109,12 @@ the top of `README.md` naming the source. This branch, `tofu`, holds Tofu's chan
   changed address became a member, and the next account made with that old address became admin. It is a new file
   rather than an edit of the init migration, so a database made from the earlier pin (`pin/2026-10-25`) gets it at its
   next build; a person who had already changed address there keeps the role the old rules left them.
+- `supabase/migrations/20261025200100_tofu_messages_cannot_be_edited.sql` (new): drops upstream's policy "Allow
+  individual update access" on `messages` (an author may update their message, with no permission check) and revokes
+  UPDATE on `messages` from `anon` and `authenticated`. No page edits a message (`lib/Store.js` only reads, posts and
+  deletes them), but through the Data API a person lowered to viewer could still rewrite every message they had posted
+  and move it to another channel. `authenticated` now holds exactly what the pages use: SELECT on `users`; SELECT,
+  INSERT and DELETE on `channels` and on `messages`.
 - `tofu/migrate.mjs` (new) and the `build` script: the migrations and the sign-up switch, at the start of each build.
   It strips `sslmode` from `DATABASE_URL` and sets TLS itself, because node-postgres treats `sslmode=require` as full
   verification against the system's roots, which the managed database's pooler does not pass.

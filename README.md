@@ -89,7 +89,7 @@ Supabase integrates seamlessly with Vercel's preview branches, giving each branc
 
 ### Role-based access control (RBAC)
 
-(Tofu changed this section.) Each person's role is a row in `public.app_members`, by email address: `admin`, `member` or `viewer`. The first account made in the app becomes its `admin`, and every account after it a `member`. Admins can delete all messages and channels (the app offers no way to delete the `public` channel); members post, make channels and delete their own; viewers can read but not post. A role follows its person when they change their email address, and a new account never takes over a role left on its address. Upstream gave the `admin` and `moderator` roles to any address containing `+supaadmin@` or `+supamod@`, which let anyone promote themselves.
+(Tofu changed this section.) Each person's role is a row in `public.app_members`, by email address: `admin`, `member` or `viewer`. The first account made in the app becomes its `admin`, and every account after it a `member`. Admins can delete all messages and channels (the app offers no way to delete the `public` channel); members post, make channels and delete their own; viewers can read but not post; nobody can edit a message once it is posted. A role follows its person when they change their email address, and a new account never takes over a role left on its address. Upstream gave the `admin` and `moderator` roles to any address containing `+supaadmin@` or `+supamod@`, which let anyone promote themselves.
 
 ### Postgres Row level security
 
