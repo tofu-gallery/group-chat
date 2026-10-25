@@ -41,9 +41,11 @@ the top of `README.md` naming the source. This branch, `tofu`, holds Tofu's chan
   role), and every account after it a member. Make your own account first. Admins delete any message and any channel
   (the app offers no way to delete `#public`, which everyone opens on); members post, make channels and delete their
   own; a **viewer** can read but not post, and is told so; nobody can edit a message once it is posted (the app has no
-  edit, and the Data API refuses one). Roles are rows of `public.app_members` (one per email
-  address), the table Tofu's People card reads: it shows each person's role, can lower a role on every plan and raise
-  one on a paid plan.
+  edit, and the Data API refuses one). Roles are rows of `public.app_members` (one per email address), the table Tofu's
+  People card reads: it shows each person's role, can lower a role on every plan and raise one on a paid plan.
+- A viewer can still delete their own messages, and the channels they made with everything posted in them, as a member
+  can (upstream's rule: a channel belongs to whoever made it). Removing the person instead leaves their channels with no
+  creator, so only an admin can delete them.
 - **A role follows its person.** Anyone signed in can change their own email address through the auth service; once
   the new address is confirmed, their row in `public.app_members` moves to it, and their name in the chat follows. A row
   the new address already had goes first (an address belongs to one account at a time, so it was nobody's), and an
@@ -163,6 +165,54 @@ analytics off.
   channel names are made by the browser's own prompt.
 
 ## Verification
+
+### Second round: the two fixes (`pin/2026-10-25.1`)
+
+Run on 2026-10-25 on macOS, Node.js 22.22.3, npm 10.9.8, against a throwaway local PostgreSQL 14 database and nothing
+outward (no deployment, no Docker; Next.js telemetry off with `NEXT_TELEMETRY_DISABLED=1`), from the tree as Tofu
+deploys it: `git archive` of this branch at `31e4def` (the two fixes; the commit after it changes only this file), with
+the execute bit taken off every file.
+
+1. `npm ci`: 125 packages from `package-lock.json` (Next.js 16.4.3, supabase-js 2.118.0, pg 8.23.1). `npm run build`
+   with `DATABASE_URL` on a stand-in for a new Supabase project, as in the first round (with Supabase's
+   one-account-per-address index on `auth.users`): the migration step applied all four files, then `next build`
+   compiled four static routes; a second run of the step applied none. Two sign-ups at once on an empty app made one
+   admin and one member.
+2. The same SQL against the first pin's two files and this branch's four, as the auth service, as the statements Tofu's
+   People card sends, and as `authenticated` and `anon` with `request.jwt.claims` set. On the first pin: a member lowered
+   to viewer updated his own message's text and moved it to `#random` (a row each); after he changed his address he was
+   a member again, posted and made a channel; an admin who changed address became a member; a newcomer with the admin's
+   old address became admin. On this branch: the viewer's updates were refused (`permission denied for table messages`);
+   his row moved with his address, and he stayed a viewer and could neither post nor make a channel; the admin stayed
+   admin; a newcomer with an old address, and one with an address carrying a planted admin row, became members; a change
+   of letter case moved nothing; an address set to null took its row away. `authenticated` holds SELECT on `users` and
+   SELECT, INSERT and DELETE on `channels` and `messages`, and nothing on the other tables; `anon` holds nothing; every
+   table has row-level security; the publication holds the three tables.
+3. Upgrade: a database the first pin's build had set up, with that state on it, took the two new files at this branch's
+   build (the ledger then lists all four). After it, a lowered person who changed address stayed a viewer and could
+   neither post nor edit, and a new account on an address an earlier address change had left an admin row on became a
+   member. People who changed address before the upgrade keep the role the old rules left them.
+4. Sign-up, the core action and removal, on a fresh database: a row left on an address nobody holds did not stop the
+   first sign-up from becoming admin; a member posted in `#public` and read it back with his name and the channel, and
+   could not delete `#public`; a person who changed address took their role and their name with them. With
+   `NEXT_PUBLIC_DISABLE_SIGN_UP=true` the migration step closed the switch: a sign-up was refused ("Sign-up is closed in
+   this chat: ask its owner to add you."), the statement Tofu's Add by email sends made a member, and a person could
+   still change address, their role following. The statement Tofu's People card sends to remove someone removed the
+   admin's profile, messages and role and left her channel with no creator; added back while others held roles, she was
+   a member. Without the setting, the step opened the switch again.
+5. `next start -H 127.0.0.1 -p 4391`: `/`, `/channels/1` and `/channels/2` answered 200. Headless Chromium as in the
+   first round (the auth service and the Data API answered by a local stand-in over the same database, each query run as
+   `authenticated` with the person's claims): Mike signed up and posted, and saw his message after a reload; Frank
+   signed up and posted; lowered to viewer with the statement Tofu sends on the Free plan, Frank saw the read-only line
+   and no message box or New Channel; a `PATCH` of his message sent from the page answered 403 (`permission denied for
+   table messages`); after his address changed and he signed in with the new one, he was still a viewer, and his message
+   was unedited and carried his new address as his name. No page error.
+6. Tofu's own checks on the pushed branch at `31e4def`: `migration-step.ts` read step `present` and a build that may
+   apply `supabase/migrations`, so Tofu leaves the folder to `tofu/migrate.mjs`; the gallery's shelf check (Tofu's GitHub
+   import, the static lane's predicates and the safety check) said `safety ok (0 findings)` and 18 of 500 published
+   files, not on the static lane.
+
+### First round (`pin/2026-10-25`)
 
 Run on 2026-10-25 on macOS, Node.js 22.22.3, npm 10.9.8, against a throwaway local PostgreSQL 14 database and nothing
 outward (no deployment, no Docker):
